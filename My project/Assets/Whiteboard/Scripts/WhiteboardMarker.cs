@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class WhiteboardMarker : MonoBehaviour
 {
@@ -9,7 +10,9 @@ public class WhiteboardMarker : MonoBehaviour
     [SerializeField] private int _penSize = 20;
 
     private Renderer _renderer;
+    //private Renderer _rendererBoard;
     private Color[] _colors;
+    private Color[] _erasers;
     private float _tipHeight;
 
     private RaycastHit _touch;
@@ -17,22 +20,33 @@ public class WhiteboardMarker : MonoBehaviour
     private Vector2 _touchPos, _lastTouchPos;
     private bool _touchedLastFrame;
     private Quaternion _lastTouchRot;
-
+    
     // Start is called before the first frame update
     void Start()
     {
         _renderer = _tip.GetComponent<Renderer>();
+        //_rendererBoard = _whiteboard.GetComponent<Renderer>();
         _colors = Enumerable.Repeat(_renderer.material.color, _penSize * _penSize).ToArray();
+        _erasers = Enumerable.Repeat(Color.grey, _penSize * _penSize).ToArray();
         _tipHeight = _tip.localScale.y;
     }
 
     // Update is called once per frame
     void Update()
     {
-        Draw();
+        if (OVRInput.Get(OVRInput.Button.One))
+        {
+            Draw(_colors);
+        }
+
+        if (OVRInput.Get(OVRInput.Button.Two))
+        {
+            Draw(_erasers);
+        }
+        
     }
 
-    private void Draw()
+    private void Draw(Color[] _color)
     {
         if (Physics.Raycast(_tip.position, transform.up, out _touch, _tipHeight))
         {
@@ -52,13 +66,13 @@ public class WhiteboardMarker : MonoBehaviour
 
                 if (_touchedLastFrame)
                 {
-                    _whiteboard.texture.SetPixels(x, y, _penSize, _penSize, _colors);
+                    _whiteboard.texture.SetPixels(x, y, _penSize, _penSize, _color);
 
                     for (float f = 0.01f; f < 1.00f; f += 0.03f)
                     {
                         var lerpX = (int)Mathf.Lerp(_lastTouchPos.x, x, f);
                         var lerpY = (int)Mathf.Lerp(_lastTouchPos.y, y, f);
-                        _whiteboard.texture.SetPixels(lerpX, lerpY, _penSize, _penSize, _colors);
+                        _whiteboard.texture.SetPixels(lerpX, lerpY, _penSize, _penSize, _color);
                     }
 
                     transform.rotation = _lastTouchRot;
